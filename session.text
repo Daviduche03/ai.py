@@ -1,0 +1,104 @@
+
+> perfect, it works now we want users to be able to specify model like in ai sdk import { generateText } from 
+  "ai"
+  import { google } from "@ai-sdk/google"
+  const { text } = await generateText({
+  model: google("models/gemini-2.0-flash-exp"),
+  prompt: "What is love?"
+  })
+
+✦ Understood. You want a high-level generateText function that allows specifying the model provider and model
+  name in a clean, unified way, just like the Vercel AI SDK.
+
+  I will implement this by creating a generateText function and provider-specific model classes (e.g., openai,
+  google). This will allow for code like this:
+
+
+
+   1 from ai.model import openai, google
+   2 from ai.core import generateText
+   3 
+   4 # Example usage:
+   5 async for chunk in generateText(model=openai("gpt-4o"), prompt="What is love?"):
+   6     print(chunk, end="")
+   7 
+   8 async for chunk in generateText(model=google("models/gemini-2.0-flash-exp"), prompt="What is love?"
+     ):
+   9     print(chunk, end="")
+
+
+
+  I'll start by creating a new ai/model.py file to define the provider-specific model classes (openai, google,
+  etc.). This will keep the model definitions separate from the core streaming logic.
+ ╭──────────────────────────────────────────────────────────────────────────────────────────────────────╮
+ │ ✔  WriteFile Writing to ai/model.py                                                                  │
+ │                                                                                                      │
+ │     1 from typing import Dict, Any                                                                   │
+ │     2                                                                                                │
+ │     3 class LanguageModel:                                                                           │
+ │     4     def __init__(self, provider: str, model: str, options: Dict[str, Any] = {}):               │
+ │     5         self.provider = provider                                                               │
+ │     6         self.model = model                                                                     │
+ │     7         self.options = options                                                                 │
+ │     8                                                                                                │
+ │     9 def openai(model: str, **kwargs: Any) -> LanguageModel:                                        │
+ │    10     """                                                                                        │
+ │    11     Creates a LanguageModel instance for OpenAI.                                               │
+ │    12     """                                                                                        │
+ │    13     return LanguageModel(provider="openai", model=model, options=kwargs)                       │
+ │    14                                                                                                │
+ │    15 def google(model: str, **kwargs: Any) -> LanguageModel:                                        │
+ │    16     """                                                                                        │
+ │    17     Creates a LanguageModel instance for Google.                                               │
+ │    18     """                                                                                        │
+ │    19     return LanguageModel(provider="google", model=model, options=kwargs)                       │
+ ╰──────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ Now I will create the generateText function in ai/core.py. This function will take a LanguageModel instance
+  and a prompt, and then call the appropriate provider to stream the response. I'll need to read the ai/core.py
+  file first.
+ ╭─────────────────────────╮
+ │ ✔  ReadFile ai/core.py  │
+ ╰─────────────────────────╯
+✦ I will now add the generateText function to ai/core.py and modify the stream function to support the new
+  LanguageModel class.
+ ╭──────────────────────────────────────────────────────────────────────────────────────────────────────╮
+ │ ✔  Edit ai/core.py: from typing import AsyncGenera... => from typing import AsyncGenera...           │
+ │                                                                                                      │
+ │    1      from typing import AsyncGenerator, Dict, Any, Callable                                     │
+ │    2      from ai.openai import stream as openai_stream                                              │
+ │    3    + from ai.model import LanguageModel                                                         │
+ │    4                                                                                                 │
+ │    5      Provider = Callable[..., AsyncGenerator[str, None]]                                        │
+ │    6                                                                                                 │
+ │    ════════════════════════════════════════════════════════════════════════════════════════════════  │
+ │    22                                                                                                │
+ │    23         async for chunk in provider(**kwargs):                                                 │
+ │    24             yield chunk                                                                        │
+ │    25   +                                                                                            │
+ │    26   + async def generateText(                                                                    │
+ │    27   +     model: LanguageModel,                                                                  │
+ │    28   +     prompt: str,                                                                           │
+ │    29   + ) -> AsyncGenerator[str, None]:                                                            │
+ │    30   +     """                                                                                    │
+ │    31   +     Generates text from a language model.                                                  │
+ │    32   +     """                                                                                    │
+ │    33   +     provider = PROVIDERS.get(model.provider)                                               │
+ │    34   +     if not provider:                                                                       │
+ │    35   +         raise ValueError(f"Provider '{model.provider}' not found.")                        │
+ │    36   +                                                                                            │
+ │    37   +     # This is a simplified implementation. In a real-world scenario,                       │
+ │    38   +     # you would need to handle the prompt and other options according to the provider's    │
+ │           API.                                                                                       │
+ │    39   +     # For now, we'll just pass the prompt as the first message.                            │
+ │    40   +     messages = [{"role": "user", "content": prompt}]                                       │
+ │    41   +                                                                                            │
+ │    42   +     async for chunk in provider(                                                           │
+ │    43   +         model=model.model,                                                                 │
+ │    44   +         messages=messages,                                                                 │
+ │    45   +         **model.options,                                                                   │
+ │    46   +     ):                                                                                     │
+ │    47   +         yield chunk                                                                        │
+ ╰──────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ℹ ⚡ Rate limiting detected. Automatically switching from gemini-2.5-pro to gemini-2.5-flash for faster 
+  responses for the remainder of this session.
