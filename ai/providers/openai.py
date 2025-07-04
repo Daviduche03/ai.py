@@ -93,8 +93,10 @@ class OpenAIProvider(BaseProvider):
 
     async def process_tool_calls(
         self,
-        tool_calls: List[Dict[str, Any]],
-        tool_map: Dict[str, Tool]
+        tool_calls: List[
+            Any
+        ],  # Changed from Dict to Any to handle ChatCompletionMessageToolCall objects
+        tool_map: Dict[str, Tool],
     ) -> List[Dict[str, Any]]:
         print("tool_calls", tool_calls)
 
@@ -102,9 +104,30 @@ class OpenAIProvider(BaseProvider):
 
         if tool_calls:
             for tool_call in tool_calls:
-                print("individual calls: ", tool_call, "function: ", tool_call['function']['name'])
-                tool_name = tool_call['function']['name']
-                tool_args = json.loads(tool_call['function']["arguments"])
+                # Handle both dict and ChatCompletionMessageToolCall object formats
+                if hasattr(
+                    tool_call, "function"
+                ):  # ChatCompletionMessageToolCall object
+                    print(
+                        "individual calls: ",
+                        tool_call,
+                        "function: ",
+                        tool_call.function.name,
+                    )
+                    tool_name = tool_call.function.name
+                    tool_args = json.loads(tool_call.function.arguments)
+                    tool_call_id = tool_call.id
+                else:  # Dict format (fallback)
+                    print(
+                        "individual calls: ",
+                        tool_call,
+                        "function: ",
+                        tool_call["function"]["name"],
+                    )
+                    tool_name = tool_call["function"]["name"]
+                    tool_args = json.loads(tool_call["function"]["arguments"])
+                    tool_call_id = tool_call["id"]
+
                 tool = tool_map.get(tool_name)
 
                 if tool:
@@ -114,23 +137,18 @@ class OpenAIProvider(BaseProvider):
                         result = tool.execute(tool.parameters(**tool_args))
 
                     logger.info(
-                        f"Tool '{tool_name}' called with args {tool_args}. Result: {result}"
+                        f"Tool '{tool_name}' executed with args {tool_args}, result: {result}"
                     )
+
                     tool_results.append(
-                        {"tool_call_id": tool_call["id"], "result": json.dumps(result)}
+                        {
+                            "tool_call_id": tool_call_id,
+                            "role": "tool",
+                            "name": tool_name,
+                            "content": json.dumps(result),
+                        }
                     )
-
-            # # Append original message
-            # kwargs["messages"].append(message)
-
-            # # Append tool responses
-            # for tool_result in tool_results:
-            #     kwargs["messages"].append(
-            #         {
-            #             "role": "tool",
-            #             "tool_call_id": tool_result["tool_call_id"],
-            #             "content": tool_result["result"],
-            #         }
-            #     )
+                else:
+                    logger.warning(f"Tool '{tool_name}' not found in tool_map")
 
         return tool_results

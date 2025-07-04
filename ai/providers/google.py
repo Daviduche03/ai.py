@@ -186,20 +186,10 @@ class GoogleProvider(BaseProvider):
                             "tool_call_id": random.randint(
                                 1000, 9999
                             ),  # Simulating a tool call ID
-                            "result": json.dumps(result),
+                            "role": "tool",
+                            "name": tool_name,
+                            "content": json.dumps(result),
                         }
                     )
 
-            # kwargs['messages'].append(message)
-            # for tool_result in tool_results:
-            #     kwargs['messages'].append({
-            #         'role': 'model.',
-            #         'tool_call_id': tool_result['tool_call_id'],
-            #         'content': tool_result['result']
-            #     })
-
-            # if 'tools' in kwargs:
-            #     del kwargs['tools']
-
-            # return tool_results
             return tool_results
