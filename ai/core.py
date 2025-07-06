@@ -1,13 +1,13 @@
 from typing import AsyncGenerator, Any
-from ai.providers.openai import OpenAIProvider, StreamEvent
+from ai.providers.openai import OpenAIProvider
 from ai.providers.google import GoogleProvider
-from openai.types.chat import ChatCompletion
 from ai.model import LanguageModel
 from ai.tools import Tool
 import json
-
+import uuid
+from ai.types import OnFinish, OnFinishResult
 import logging
-import inspect
+
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ PROVIDER_CLASSES = {
 NOT_PROVIDED = "NOT_PROVIDED"
 
 
-from ai.types import OnFinish, OnFinishResult
+
 
 
 async def streamText(
@@ -30,6 +30,41 @@ async def streamText(
     onFinish: OnFinish = None,
     **kwargs: Any,
 ) -> AsyncGenerator[str, None]:
+    """
+    Generate streaming text responses from AI models with optional tool calling support.
+    
+    This function provides real-time text generation with support for tool execution,
+    allowing for interactive AI applications with dynamic capabilities.
+    
+    Args:
+        model (LanguageModel): The language model instance to use for generation
+        systemMessage (str): System message that defines the AI's behavior and context
+        tools (list[Tool], optional): List of tools the AI can call during generation. Defaults to [].
+        prompt (str, optional): User prompt. Cannot be used with 'messages' in kwargs. Defaults to NOT_PROVIDED.
+        onFinish (OnFinish, optional): Callback function called when generation completes. Defaults to None.
+        **kwargs: Additional arguments including:
+            - messages: List of conversation messages (conflicts with prompt)
+            - options: Dictionary of provider-specific options
+            - Other provider-specific parameters
+    
+    Returns:
+        AsyncGenerator[str, None]: Async generator yielding text chunks as they're generated
+    
+    Raises:
+        ValueError: If provider is not found, both messages and prompt are provided,
+                   or system message is missing
+        RuntimeError: If text generation fails due to provider errors
+    
+    Example:
+        ```python
+        async for chunk in streamText(
+            model=openai("gpt-4"),
+            systemMessage="You are a helpful assistant.",
+            prompt="Hello, how are you?"
+        ):
+            print(chunk, end="")
+        ```
+    """
     ProviderClass = PROVIDER_CLASSES.get(model.provider)
     if not ProviderClass:
         raise ValueError(f"Provider '{model.provider}' not found.")
@@ -51,6 +86,54 @@ async def streamText(
 
     kwargs["messages"].insert(0, {"role": "system", "content": systemMessage})
 
+    # Check for client-side tool results in messages
+    client_tool_results = []
+    for message in kwargs["messages"]:
+        if message.get("role") == "assistant" and "toolInvocations" in message:
+            for invocation in message["toolInvocations"]:
+                if invocation.get("state") == "result":
+                    client_tool_results.append({
+                        "tool_call_id": invocation["toolCallId"],
+                        "content": str(invocation["result"])
+                    })
+    
+    # If we have client-side tool results, add them as tool messages
+    if client_tool_results:
+        # Find the assistant message with tool calls
+        for i, message in enumerate(kwargs["messages"]):
+            if (message.get("role") == "assistant" and 
+                "toolInvocations" in message and 
+                any(inv.get("state") == "result" for inv in message["toolInvocations"])):
+                
+                # Extract tool calls from toolInvocations
+                tool_calls = []
+                for invocation in message["toolInvocations"]:
+                    if invocation.get("state") == "result":
+                        tool_calls.append({
+                            "id": invocation["toolCallId"],
+                            "type": "function",
+                            "function": {
+                                "name": invocation["toolName"],
+                                "arguments": json.dumps(invocation["args"])
+                            }
+                        })
+                
+                # Update the assistant message to include tool_calls
+                kwargs["messages"][i] = {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": tool_calls
+                }
+                
+                # Add tool result messages after the assistant message
+                for j, result in enumerate(client_tool_results):
+                    kwargs["messages"].insert(i + 1 + j, {
+                        "role": "tool",
+                        "tool_call_id": result["tool_call_id"],
+                        "content": result["content"]
+                    })
+                break
+
     if tools:
         kwargs["tools"] = provider.format_tools(tools)
 
@@ -60,6 +143,10 @@ async def streamText(
     full_response = ""
     all_tool_calls = []
     all_tool_results = []
+    message_id = f"msg-{uuid.uuid4().hex[:24]}"
+    
+    # Yield initial message ID
+    yield f"f:{json.dumps({"messageId": message_id})}\n"
 
     try:
         async for event in provider.stream(
@@ -73,33 +160,91 @@ async def streamText(
             elif event.event == "tool_calls":
                 tool_calls = event.data
                 all_tool_calls.extend(tool_calls)
-                tool_results = (
-                    await provider.process_tool_calls(tool_calls, tool_map)
-                    if tools
-                    else None
-                )
-                if tool_results:
-                    all_tool_results.extend(tool_results)
-
-                kwargs["messages"].append(
-                    {"role": "assistant", "content": "", "tool_calls": tool_calls}
-                )
-                for tool_result in tool_results:
-                    kwargs["messages"].append(
-                        {
-                            "role": "tool",
-                            "tool_call_id": tool_result["tool_call_id"],
-                            "content": tool_result["content"],
+                
+                # Yield tool calls immediately
+                for tool_call in tool_calls:
+                    # Handle different provider formats
+                    if hasattr(tool_call, 'name'):  # Google FunctionCall object
+                        tool_call_data = {
+                            "toolCallId": f"call_{uuid.uuid4().hex[:24]}",
+                            "toolName": tool_call.name,
+                            "args": tool_call.args
                         }
+                        tool_name = tool_call.name
+                    else:  # OpenAI format (dictionary)
+                        tool_call_data = {
+                            "toolCallId": tool_call["id"],
+                            "toolName": tool_call["function"]["name"],
+                            "args": json.loads(tool_call["function"]["arguments"])
+                        }
+                        tool_name = tool_call["function"]["name"]
+                    
+                    yield f"9:{json.dumps(tool_call_data)}\n"
+                
+                # Check if any tools have execute functions (server-side tools)
+                has_server_side_tools = any(
+                    hasattr(tool_map.get(
+                        tool_call.name if hasattr(tool_call, 'name') else tool_call["function"]["name"]
+                    ), 'execute') and 
+                    tool_map.get(
+                        tool_call.name if hasattr(tool_call, 'name') else tool_call["function"]["name"]
+                    ).execute is not None
+                    for tool_call in tool_calls
+                    if tool_map.get(
+                        tool_call.name if hasattr(tool_call, 'name') else tool_call["function"]["name"]
                     )
+                )
+                
+                if has_server_side_tools:
+                    # Process server-side tools
+                    tool_results = (
+                        await provider.process_tool_calls(tool_calls, tool_map)
+                        if tools
+                        else None
+                    )
+                    if tool_results:
+                        all_tool_results.extend(tool_results)
+                        
+                        # Yield tool results immediately
+                        for tool_result in tool_results:
+                            result_data = {
+                                "toolCallId": tool_result["tool_call_id"],
+                                "result": tool_result["content"]
+                            }
+                            yield f"a:{json.dumps(result_data)}\n"
 
-                if "tools" in kwargs:
-                    del kwargs["tools"]
+                    kwargs["messages"].append(
+                        {"role": "assistant", "content": "", "tool_calls": tool_calls}
+                    )
+                    for tool_result in tool_results:
+                        kwargs["messages"].append(
+                            {
+                                "role": "tool",
+                                "tool_call_id": tool_result["tool_call_id"],
+                                "content": tool_result["content"],
+                            }
+                        )
 
-                async for chunk in streamText(
-                    model, systemMessage, tools=tools, onFinish=onFinish, **kwargs
-                ):
-                    yield chunk
+                    if "tools" in kwargs:
+                        del kwargs["tools"]
+
+                    # Yield finish reason for tool calls step
+                    yield f"e:{json.dumps({"finishReason": "tool-calls", "usage": {"promptTokens": 0, "completionTokens": 0}, "isContinued": True})}\n"
+
+                    async for chunk in streamText(
+                        model, systemMessage, tools=tools, onFinish=onFinish, **kwargs
+                    ):
+                        yield chunk
+                    return
+                else:
+                    # Client-side tools only - finish here
+                    yield f"e:{json.dumps({"finishReason": "tool-calls", "usage": {"promptTokens": 0, "completionTokens": 0}, "isContinued": False})}\n"
+                    yield f"d:{json.dumps({"finishReason": "tool-calls", "usage": {"promptTokens": 0, "completionTokens": 0}})}\n"
+                    return
+        
+        # Yield final finish event for non-tool-call completions
+        yield f"e:{json.dumps({"finishReason": "stop", "usage": {"promptTokens": 0, "completionTokens": 0}, "isContinued": False})}\n"
+        yield f"d:{json.dumps({"finishReason": "stop", "usage": {"promptTokens": 0, "completionTokens": len(full_response.split())}})}\n"
 
         if onFinish:
             result = OnFinishResult(
@@ -145,6 +290,46 @@ async def generateText(
     _accumulated_tool_results: list = None,
     **kwargs: Any,
 ) -> str:
+    """
+    Generate complete text responses from AI models with tool calling and recursion support.
+    
+    This function generates a complete text response, handling tool calls recursively
+    until the AI provides a final answer or reaches the maximum tool call limit.
+    
+    Args:
+        model (LanguageModel): The language model instance to use for generation
+        systemMessage (str): System message that defines the AI's behavior and context
+        tools (list[Tool], optional): List of tools the AI can call during generation. Defaults to [].
+        prompt (str, optional): User prompt. Cannot be used with 'messages' in kwargs. Defaults to NOT_PROVIDED.
+        max_tool_calls (int, optional): Maximum number of recursive tool calls allowed. Defaults to 5.
+        onFinish (OnFinish, optional): Callback function called when generation completes. Defaults to None.
+        _accumulated_tool_calls (list, optional): Internal parameter for tracking tool calls across recursions. Defaults to None.
+        _accumulated_tool_results (list, optional): Internal parameter for tracking tool results across recursions. Defaults to None.
+        **kwargs: Additional arguments including:
+            - messages: List of conversation messages (conflicts with prompt)
+            - options: Dictionary of provider-specific options
+            - Other provider-specific parameters
+    
+    Returns:
+        str: The complete generated text response
+    
+    Raises:
+        ValueError: If provider is not found, both messages and prompt are provided,
+                   or system message is missing
+        RuntimeError: If text generation fails due to provider errors or max recursion reached
+    
+    Example:
+        ```python
+        response = await generateText(
+            model=google("gemini-pro"),
+            systemMessage="You are a helpful assistant with access to tools.",
+            prompt="What's the weather like in Paris?",
+            tools=[weather_tool],
+            max_tool_calls=3
+        )
+        print(response)
+        ```
+    """
     ProviderClass = PROVIDER_CLASSES.get(model.provider)
     if not ProviderClass:
         raise ValueError(f"Provider '{model.provider}' not found.")

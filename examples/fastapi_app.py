@@ -17,6 +17,28 @@ logging.basicConfig(level=logging.INFO)
 
 app = FastAPI()
 
+# Define tool classes and instances at module level for reuse
+class WeatherParams(BaseModel):
+    location: str = Field(..., description="City and country e.g. Bogotá, Colombia")
+
+class CallNumberParams(BaseModel):
+    number: str = Field(..., description="Phone number to call")
+
+weather_tool = Tool(
+    name="get_weather",
+    description="Get current temperature for a given location.",
+    parameters=WeatherParams,
+    execute=lambda params: {"location": params.location, "temperature": random.randint(-20, 35)},
+)
+
+# Client-side tool (no execute function)
+call_number_tool = Tool(
+    name="callMyNumber",
+    description="Call a phone number (client-side execution)",
+    parameters=CallNumberParams,
+    # No execute function - this will be handled client-side
+)
+
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -40,30 +62,25 @@ async def chat(request: Request):
     if not messages:
         return {"error": "messages is required"}, 400
 
-    class WeatherParams(BaseModel):
-        location: str = Field(..., description="City and country e.g. Bogotá, Colombia")
+    # stream = streamText(
+    #     model=openai('gpt-4.1'),
+    #     messages=messages,
+    #     systemMessage="Your name is david.",
+    #     tools=[weather_tool],
+    #     onFinish=on_finish_callback,
+    #     # options=body,
+    # )
 
-    weather_tool = Tool(
-        name="get_weather",
-        description="Get current temperature for a given location.",
-        parameters=WeatherParams,
-        execute=lambda params: {"location": params.location, "temperature": random.randint(-20, 35)},
+    return StreamingResponse(
+         streamText(
+            model=openai("gpt-4.1"),
+            messages=messages,
+            systemMessage="Your name is david.",
+            tools=[weather_tool, call_number_tool],
+            onFinish=on_finish_callback,
+        ),
+        media_type="text/plain; charset=utf-8",
     )
-
-    stream = streamText(
-        model=google("gemini-2.5-pro"),
-        messages=messages,
-        systemMessage="Your name is david.",
-        tools=[weather_tool],
-        onFinish=on_finish_callback,
-        # options=body,
-    )
-
-    async def generate():
-        async for chunk in stream:
-            yield f"data: {chunk}\n\n"
-
-    return StreamingResponse(generate(), media_type="text/plain")
 
 
 # Example onFinish callback for logging and analytics
@@ -87,16 +104,6 @@ async def chat_non_streaming(request: Request):
 
     if not messages:
         return {"error": "messages is required"}, 400
-
-    class WeatherParams(BaseModel):
-        location: str = Field(..., description="City and country e.g. Bogotá, Colombia")
-
-    weather_tool = Tool(
-        name="get_weather",
-        description="Get current temperature for a given location.",
-        parameters=WeatherParams,
-        execute=lambda params: {"location": params.location, "temperature": random.randint(-20, 35)},
-    )
 
     response = await generateText(
         model=google("gemini-2.5-pro"),
