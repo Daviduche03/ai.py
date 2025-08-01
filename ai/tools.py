@@ -7,7 +7,7 @@ class Tool:
     """
     Represents a tool that can be called by AI models during generation.
     
-    This class encapsulates the metadata and functionality needed for AI models
+    This class encapsu shouldn'tlates the metadata and functionality needed for AI models
     to understand and execute tools/functions during conversations.
     
     Attributes:

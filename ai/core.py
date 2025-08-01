@@ -19,6 +19,15 @@ PROVIDER_CLASSES = {
 NOT_PROVIDED = "NOT_PROVIDED"
 
 
+def _get_provider_class(provider_name: str):
+    """Get provider class with helpful error messages."""
+    ProviderClass = PROVIDER_CLASSES.get(provider_name)
+    if not ProviderClass:
+        available_providers = list(PROVIDER_CLASSES.keys())
+        raise ValueError(f"Provider '{provider_name}' not supported. Available providers: {available_providers}")
+    return ProviderClass
+
+
 
 
 
@@ -65,9 +74,7 @@ async def streamText(
             print(chunk, end="")
         ```
     """
-    ProviderClass = PROVIDER_CLASSES.get(model.provider)
-    if not ProviderClass:
-        raise ValueError(f"Provider '{model.provider}' not found.")
+    ProviderClass = _get_provider_class(model.provider)
     provider = ProviderClass(model.client)
 
     if "options" in kwargs:
@@ -330,9 +337,7 @@ async def generateText(
         print(response)
         ```
     """
-    ProviderClass = PROVIDER_CLASSES.get(model.provider)
-    if not ProviderClass:
-        raise ValueError(f"Provider '{model.provider}' not found.")
+    ProviderClass = _get_provider_class(model.provider)
     provider = ProviderClass(model.client)
 
     # Track all tool calls and results for onFinish callback
