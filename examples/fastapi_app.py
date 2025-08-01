@@ -73,7 +73,7 @@ async def chat(request: Request):
 
     return StreamingResponse(
          streamText(
-            model=openai("gpt-4.1"),
+            model=google("gemini-2.5-pro"),
             messages=messages,
             systemMessage="Your name is david.",
             tools=[weather_tool, call_number_tool],
