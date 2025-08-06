@@ -234,7 +234,7 @@ class PerplexityEngine:
     
     def _create_system_message(self, has_conversation_history: bool = False) -> str:
         """Create system message for AI-first approach with tool calling."""
-        base_message = """You are Perplexity AI, a helpful research assistant.
+        base_message = """You are Questily, a helpful research assistant.
 
 For this query, decide which tool to use or respond directly:
 - Greetings ("hi", "hello"): Respond directly
@@ -323,26 +323,8 @@ Always provide a helpful response."""
                 tools=[self.search_tool, self.stock_tool],
                 onFinish=callback
             ):
-                # Pass through AI SDK events directly - no wrapper needed!
                 yield chunk
-                
-                # # Track for conversation history
-                # if chunk.startswith("0:"):  # Text chunk
-                #     text_data = json.loads(chunk[2:])
-                #     full_response += text_data
-                # elif chunk.startswith("9:"):  # Tool call
-                #     tool_call_data = json.loads(chunk[2:])
-                #     tool_calls_made.append(tool_call_data)
-                # elif chunk.startswith("a:"):  # Tool result
-                #     tool_result_data = json.loads(chunk[2:])
-                #     tool_results.append(tool_result_data)
-                # elif chunk.startswith("d:"):  # Done
-                #     break
-            
-            # Store in conversation history
-            print(f"Tool calls made: {tool_calls_made}")
-            print(f"Tool results: {tool_results}")
-            print(f"Full response: {full_response}")
+         
             if conversation_id and full_response:
                 
                 # Add user message
