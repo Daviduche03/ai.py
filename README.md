@@ -372,14 +372,12 @@ import os
 os.environ["OPENAI_API_KEY"] = "your-key"
 
 # Chat models
-model = openai("gpt-4")           # GPT-4
-model = openai("gpt-4-turbo")     # GPT-4 Turbo
-model = openai("gpt-3.5-turbo")   # GPT-3.5 Turbo
+model = openai("gpt-4o")           # GPT-4
+model = openai("gpt-4.1")     # GPT-4.1
 
 # Embedding models
 embed_model = openai_embedding("text-embedding-3-small")  # 1536 dimensions
 embed_model = openai_embedding("text-embedding-3-large")  # 3072 dimensions
-embed_model = openai_embedding("text-embedding-ada-002") # Legacy model
 ```
 
 ### Google Gemini
@@ -391,9 +389,8 @@ import os
 os.environ["GOOGLE_API_KEY"] = "your-key"
 
 # Chat models
-model = google("gemini-2.0-flash-exp")  # Latest Gemini
-model = google("gemini-1.5-pro")        # Gemini Pro
-model = google("gemini-1.5-flash")      # Gemini Flash
+model = google("gemini-2.5-pro")  # Latest Gemini
+
 
 # Embedding models
 embed_model = google_embedding("text-embedding-004")  # Latest embedding model
