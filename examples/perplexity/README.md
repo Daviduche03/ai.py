@@ -1,18 +1,18 @@
-# 🔍 Perplexity Clone
+# Perplexity Clone
 
 A complete Perplexity-like AI search engine built with the AI SDK. Combines real-time web search with AI to provide accurate, cited answers.
 
-## ✨ Features
+## Features
 
-- **🔍 Real-time web search** - Multiple search providers (Serper, Tavily, DuckDuckGo)
-- **🤖 AI-powered answers** - Uses GPT-4, Gemini, and other models
-- **📚 Source citations** - Automatic citation generation with links
-- **📈 Stock data & charts** - Real-time stock prices with interactive charts
-- **⚡ Streaming responses** - Real-time answer generation
-- **🌐 Web interface** - Beautiful, responsive frontend
-- **🔌 REST API** - Complete API for integration
+- **Real-time web search** - Multiple search providers (Serper, Tavily, DuckDuckGo)
+- **AI-powered answers** - Uses GPT-4, Gemini, and other models
+- **Source citations** - Automatic citation generation with links
+- **Stock data & charts** - Real-time stock prices with interactive charts
+- **Streaming responses** - Real-time answer generation
+- **Web interface** - Beautiful, responsive frontend
+- **REST API** - Complete API for integration
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Setup
 
@@ -44,7 +44,7 @@ python app.py
 
 Visit `http://localhost:8000` to use the web interface.
 
-## 🔑 API Keys Setup
+## API Keys Setup
 
 ### OpenAI (Required)
 1. Go to [OpenAI API Keys](https://platform.openai.com/api-keys)
@@ -61,7 +61,7 @@ Visit `http://localhost:8000` to use the web interface.
 2. Sign up and get your API key  
 3. Set `TAVILY_API_KEY` environment variable
 
-## 📡 API Usage
+## API Usage
 
 ### Basic Search
 
@@ -94,7 +94,7 @@ print(f"Answer: {result.answer}")
 print(f"Citations: {len(result.citations)}")
 ```
 
-## 🔧 How It Works
+## How It Works
 
 1. **Query Processing**: User submits a search query
 2. **AI Decision**: AI decides whether to search web, get stock data, or respond directly
@@ -103,7 +103,7 @@ print(f"Citations: {len(result.citations)}")
 5. **Response Generation**: AI generates comprehensive answer with citations/charts
 6. **Streaming Delivery**: Response is streamed to user in real-time
 
-## 📈 Stock Features
+## Stock Features
 
 - **Real-time stock prices** - Current price, change, percentage
 - **Interactive charts** - Candlestick and line charts with Chart.js
@@ -118,7 +118,7 @@ print(f"Citations: {len(result.citations)}")
 - "Compare GOOGL vs MSFT stock prices"
 - "NVDA stock analysis with technical indicators"
 
-## 🆘 Troubleshooting
+## Troubleshooting
 
 **"No search providers available"**
 - Set at least one search API key (SERPER_API_KEY or TAVILY_API_KEY)

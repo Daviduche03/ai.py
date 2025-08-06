@@ -2,16 +2,16 @@
 
 A high-performance Python AI SDK inspired by Vercel AI SDK, built for production backends with streaming, multi-provider support, and type safety.
 
-## ✨ Features
+## Features
 
-- **🚀 Streaming-first** - Real-time text generation with built-in streaming support
-- **🔌 Multi-provider** - OpenAI, Google Gemini, and extensible architecture
-- **🛠️ Tool calling** - Server-side and client-side function execution
-- **⚡ FastAPI ready** - Drop-in integration for web APIs
-- **🔒 Type safe** - Full Pydantic validation and TypeScript-like experience
-- **📊 Analytics** - Built-in callbacks for monitoring and logging
+- **Streaming-first** - Real-time text generation with built-in streaming support
+- **Multi-provider** - OpenAI, Google Gemini, and extensible architecture
+- **Tool calling** - Server-side and client-side function execution
+- **FastAPI ready** - Drop-in integration for web APIs
+- **Type safe** - Full Pydantic validation and TypeScript-like experience
+- **Analytics** - Built-in callbacks for monitoring and logging
 
-## 📦 Installation
+## Installation
 
 ```bash
 # Basic installation
@@ -24,7 +24,7 @@ pip install python-ai-sdk[fastapi]
 pip install python-ai-sdk[all]
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Basic Text Generation
 
@@ -64,7 +64,7 @@ async for chunk in streamText(
         print(text, end="", flush=True)
 ```
 
-## 🖼️ Image & File Support
+## Image Support
 
 ### Image from URL (Vercel AI SDK format)
 
@@ -127,85 +127,45 @@ message = {
 }
 ```
 
-### File Support (PDF, Audio, etc.)
-
-```python
-# PDF file example
-with open("document.pdf", "rb") as f:
-    pdf_bytes = f.read()
-
-message = {
-    "role": "user",
-    "content": [
-        {"type": "text", "text": "What's in this PDF?"},
-        {
-            "type": "file",
-            "data": pdf_bytes,
-            "mediaType": "application/pdf",
-            "filename": "document.pdf"  # optional
-        }
-    ]
-}
-
-# Audio file example (for supported models)
-with open("audio.mp3", "rb") as f:
-    audio_bytes = f.read()
-
-message = {
-    "role": "user", 
-    "content": [
-        {"type": "text", "text": "What is the audio saying?"},
-        {
-            "type": "file",
-            "data": audio_bytes,
-            "mediaType": "audio/mpeg"
-        }
-    ]
-}
-```
-
 ### Helper Functions
 
 ```python
-from ai.image import image_from_file, image_from_url, file_from_path
+from ai.image import image_from_file, image_from_url
 
 # Helper functions create the proper format
 message = {
     "role": "user",
     "content": [
-        {"type": "text", "text": "Analyze these:"},
+        {"type": "text", "text": "Analyze these images:"},
         image_from_file("local_image.jpg"),      # Binary format
-        image_from_url("https://example.com/img.png"),  # URL format
-        file_from_path("document.pdf", "application/pdf")  # File format
+        image_from_url("https://example.com/img.png")  # URL format
     ]
 }
 ```
 
-### Multiple Images & Files
+### Multiple Images
 
 ```python
-# Mix images and files in one message
+# Multiple images in one message
 message = {
     "role": "user",
     "content": [
-        {"type": "text", "text": "Compare this image with the document:"},
+        {"type": "text", "text": "Compare these images:"},
         {
             "type": "image",
-            "image": "https://example.com/chart.png"
+            "image": "https://example.com/chart1.png"
         },
-        {"type": "text", "text": "And this PDF:"},
+        {"type": "text", "text": "And this one:"},
         {
-            "type": "file", 
-            "data": pdf_bytes,
-            "mediaType": "application/pdf",
-            "filename": "report.pdf"
+            "type": "image",
+            "image": "https://example.com/chart2.png"
         },
-        {"type": "text", "text": "What insights can you provide?"}
+        {"type": "text", "text": "What are the differences?"}
     ]
 }
 ```
 
-## 🔢 Embeddings
+## Embeddings
 
 ### Single Text Embedding
 
@@ -260,7 +220,7 @@ similarity = cosine_similarity(embeddings[0], embeddings[1])
 print(f"Similarity: {similarity:.4f}")  # High similarity score
 ```
 
-## 🛠️ Tool Calling
+## Tool Calling
 
 ### Server-side Tools
 
@@ -314,7 +274,7 @@ async for chunk in streamText(
         print(f"Args: {tool_call['args']}")
 ```
 
-## 🌐 FastAPI Integration
+## FastAPI Integration
 
 ```python
 from fastapi import FastAPI, Request
@@ -380,7 +340,7 @@ async def analyze_image(request: Request):
     return {"analysis": response}
 ```
 
-## 📊 Analytics & Monitoring
+## Analytics & Monitoring
 
 ```python
 from ai.types import OnFinishResult
@@ -401,7 +361,7 @@ response = await generateText(
 )
 ```
 
-## 🔧 Supported Providers
+## Supported Providers
 
 ### OpenAI
 
@@ -439,7 +399,7 @@ model = google("gemini-1.5-flash")      # Gemini Flash
 embed_model = google_embedding("text-embedding-004")  # Latest embedding model
 ```
 
-## 📝 Message Format
+## Message Format
 
 ```python
 messages = [
@@ -455,7 +415,7 @@ response = await generateText(
 )
 ```
 
-## 🔄 Streaming Response Format
+## Streaming Response Format
 
 The streaming API returns formatted chunks:
 
@@ -469,7 +429,7 @@ e:{"finishReason":"stop","usage":{...}} # Finish event
 d:{"finishReason":"stop","usage":{...}} # Done
 ```
 
-## ⚙️ Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -502,7 +462,7 @@ model = LanguageModel(
 )
 ```
 
-## 🧪 Development
+## Development
 
 ```bash
 # Clone the repository
@@ -529,7 +489,7 @@ cd examples
 python -m uvicorn fastapi_app:app --reload
 ```
 
-## 📚 Examples
+## Examples
 
 Check out the `/examples` directory for:
 - FastAPI chat application with streaming
@@ -539,7 +499,7 @@ Check out the `/examples` directory for:
 - Multi-provider usage patterns
 - Semantic search implementations
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -547,11 +507,11 @@ Check out the `/examples` directory for:
 4. Add tests
 5. Submit a pull request
 
-## 📄 License
+## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
-## 🔗 Links
+## Links
 
 - [GitHub Repository](https://github.com/Daviduche03/ai.py)
 - [PyPI Package](https://pypi.org/project/python-ai-sdk/)
