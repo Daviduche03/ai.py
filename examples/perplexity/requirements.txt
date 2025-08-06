@@ -1,0 +1,23 @@
+# Perplexity Clone Dependencies
+
+# Core dependencies (should already be installed with main AI SDK)
+openai>=1.0.0
+google-generativeai>=0.3.0
+pydantic>=2.0.0
+aiohttp>=3.8.0
+
+# FastAPI and web server
+fastapi>=0.100.0
+uvicorn[standard]>=0.20.0
+
+# For serving static files
+python-multipart>=0.0.6
+
+# Stock data
+yfinance>=0.2.0
+pandas>=1.5.0
+
+# Development and testing
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+httpx>=0.24.0

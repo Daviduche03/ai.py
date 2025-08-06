@@ -1,0 +1,6 @@
+include README.md
+include LICENSE
+include ROADMAP.md
+recursive-include ai *.py
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]

@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perplexity Clone</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f0f0f;
+            color: #ffffff;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #888;
+            font-size: 1.1rem;
+        }
+
+        .search-container {
+            margin-bottom: 30px;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #333;
+            border-radius: 25px;
+            background: #1a1a1a;
+            color: #fff;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .search-input:focus {
+            border-color: #667eea;
+        }
+
+        .search-btn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .search-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .options {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .option-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .option-group label {
+            color: #ccc;
+            font-size: 14px;
+        }
+
+        .option-group select {
+            padding: 8px 12px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .stream-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stream-toggle input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+
+        .results-container {
+            margin-top: 30px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #333;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .search-status {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .search-status h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .search-results {
+            display: grid;
+            gap: 10px;
+        }
+
+        .search-result {
+            background: #222;
+            border-radius: 8px;
+            padding: 15px;
+            border-left: 3px solid #667eea;
+        }
+
+        .search-result h4 {
+            color: #fff;
+            margin-bottom: 5px;
+            font-size: 0.95rem;
+        }
+
+        .search-result .source {
+            color: #888;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+        }
+
+        .search-result .snippet {
+            color: #ccc;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .answer-container {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .answer-container h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .answer-text {
+            color: #fff;
+            font-size: 1rem;
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+
+        .citations {
+            border-top: 1px solid #333;
+            padding-top: 20px;
+        }
+
+        .citations h4 {
+            color: #888;
+            margin-bottom: 15px;
+            font-size: 1rem;
+        }
+
+        .citation {
+            background: #222;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-left: 3px solid #764ba2;
+        }
+
+        .citation .citation-id {
+            color: #764ba2;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .citation .citation-title {
+            color: #fff;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .citation .citation-source {
+            color: #888;
+            font-size: 0.85rem;
+        }
+
+        .citation a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .citation a:hover {
+            text-decoration: underline;
+        }
+
+        .error {
+            background: #2d1b1b;
+            border: 1px solid #d73a49;
+            border-radius: 8px;
+            padding: 20px;
+            color: #f97583;
+            margin-bottom: 20px;
+        }
+
+        .conversation-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .conversation-btn {
+            padding: 8px 16px;
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .conversation-btn:hover {
+            background: #444;
+            border-color: #667eea;
+        }
+
+        .conversation-info {
+            color: #888;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
+        .conversation-history {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .conversation-history h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .history-message {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .history-message.user {
+            background: #2a2a2a;
+            border-left: 3px solid #667eea;
+        }
+
+        .history-message.assistant {
+            background: #222;
+            border-left: 3px solid #764ba2;
+        }
+
+        .history-message .role {
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+
+        .history-message.user .role {
+            color: #667eea;
+        }
+
+        .history-message.assistant .role {
+            color: #764ba2;
+        }
+
+        .history-message .content {
+            color: #ccc;
+            line-height: 1.4;
+        }
+
+        .stock-chart-container {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stock-info h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .stock-price {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .current-price {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .change {
+            font-size: 1rem;
+            font-weight: 500;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .change.positive {
+            color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .change.negative {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .stock-details {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+            margin-bottom: 10px;
+        }
+
+        .chart-info {
+            text-align: center;
+            color: #666;
+            font-size: 0.8rem;
+        }
+
+        .examples {
+            margin-top: 40px;
+            text-align: center;
+        }
+
+        .examples h3 {
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .example-queries {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .example-query {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 20px;
+            padding: 8px 16px;
+            color: #ccc;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .example-query:hover {
+            background: #333;
+            color: #fff;
+            border-color: #667eea;
+        }
+
+        .metadata {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        .metadata .timing {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .search-form {
+                flex-direction: column;
+            }
+
+            .options {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .example-queries {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Perplexity Clone</h1>
+            <p>AI-powered search with real-time citations</p>
+        </div>
+
+        <div class="search-container">
+            <div class="conversation-controls">
+                <button class="conversation-btn" id="newConversationBtn">New Conversation</button>
+                <button class="conversation-btn" id="clearConversationBtn" style="display: none;">Clear History</button>
+                <button class="conversation-btn" id="testBtn" style="background: #ff6b6b;">Test UI</button>
+                <span class="conversation-info" id="conversationInfo"></span>
+            </div>
+
+            <form class="search-form" id="searchForm">
+                <input type="text" class="search-input" id="searchInput" placeholder="Ask anything..." required>
+                <button type="submit" class="search-btn" id="searchBtn">
+                    Search
+                </button>
+            </form>
+
+            <div class="options">
+                <div class="option-group">
+                    <label for="modelSelect">Model:</label>
+                    <select id="modelSelect">
+                        <option value="gpt-4">GPT-4</option>
+                        <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                        <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash</option>
+                        <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                    </select>
+                </div>
+
+                <div class="option-group">
+                    <label for="providerSelect">Search:</label>
+                    <select id="providerSelect">
+                        <option value="auto">Auto</option>
+                        <option value="serper">Serper (Google)</option>
+                        <option value="tavily">Tavily</option>
+                        <option value="duckduckgo">DuckDuckGo</option>
+                    </select>
+                </div>
+
+                <div class="option-group">
+                    <label for="maxResults">Results:</label>
+                    <select id="maxResults">
+                        <option value="5">5</option>
+                        <option value="10" selected>10</option>
+                        <option value="15">15</option>
+                        <option value="20">20</option>
+                    </select>
+                </div>
+
+                <div class="stream-toggle">
+                    <input type="checkbox" id="streamToggle" checked>
+                    <label for="streamToggle">Stream response</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="results-container" id="resultsContainer"></div>
+
+        <div class="examples">
+            <h3>Try these examples:</h3>
+            <div class="example-queries">
+                <div class="example-query" onclick="setQuery('What are the latest developments in AI in 2024?')">
+                    Latest AI developments 2024
+                </div>
+                <div class="example-query" onclick="setQuery('Current stock market trends and analysis')">
+                    Stock market trends
+                </div>
+                <div class="example-query" onclick="setQuery('Recent breakthroughs in renewable energy')">
+                    Renewable energy breakthroughs
+                </div>
+                <div class="example-query" onclick="setQuery('Latest news about climate change policies')">
+                    Climate change policies
+                </div>
+                <div class="example-query" onclick="setQuery('Show me AAPL stock price chart')">
+                    Apple stock chart
+                </div>
+                <div class="example-query" onclick="setQuery('TSLA stock performance this month')">
+                    Tesla stock data
+                </div>
+                <div class="example-query" onclick="setQuery('Compare GOOGL vs MSFT stock prices')">
+                    Stock comparison
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+
+        const searchForm = document.getElementById('searchForm');
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const modelSelect = document.getElementById('modelSelect');
+        const providerSelect = document.getElementById('providerSelect');
+        const maxResults = document.getElementById('maxResults');
+        const streamToggle = document.getElementById('streamToggle');
+
+        // Conversation management elements
+        const newConversationBtn = document.getElementById('newConversationBtn');
+        const clearConversationBtn = document.getElementById('clearConversationBtn');
+        const conversationInfo = document.getElementById('conversationInfo');
+
+        let currentEventSource = null;
+        let currentConversationId = null;
+        let messageCount = 0;
+
+        searchForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const query = searchInput.value.trim();
+            if (!query) return;
+
+            await performSearch(query);
+        });
+
+        newConversationBtn.addEventListener('click', async () => {
+            await createNewConversation();
+        });
+
+        clearConversationBtn.addEventListener('click', async () => {
+            if (currentConversationId && confirm('Clear conversation history?')) {
+                await clearConversation();
+            }
+        });
+
+        document.getElementById('testBtn').addEventListener('click', () => {
+            console.log('Testing UI update...');
+
+            // Test the handleAIChunk function directly
+            answerText = '';
+            handleAIChunk('0:"Hello"');
+            handleAIChunk('0:" World"');
+            handleAIChunk('0:"!"');
+
+            console.log('Test completed, answerText:', answerText);
+        });
+
+        function setQuery(query) {
+            searchInput.value = query;
+            performSearch(query);
+        }
+
+        async function createNewConversation() {
+            try {
+                const response = await fetch(`${API_BASE}/conversation/new`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                currentConversationId = data.conversation_id;
+                messageCount = 0;
+
+                updateConversationInfo();
+                resultsContainer.innerHTML = '';
+
+                console.log('New conversation created:', currentConversationId);
+
+            } catch (error) {
+                console.error('Failed to create conversation:', error);
+                showError('Failed to create new conversation');
+            }
+        }
+
+        async function clearConversation() {
+            if (!currentConversationId) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/conversation/${currentConversationId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                messageCount = 0;
+                updateConversationInfo();
+                resultsContainer.innerHTML = '';
+
+                console.log('Conversation cleared:', currentConversationId);
+
+            } catch (error) {
+                console.error('Failed to clear conversation:', error);
+                showError('Failed to clear conversation');
+            }
+        }
+
+        function updateConversationInfo() {
+            if (currentConversationId) {
+                conversationInfo.textContent = `Conversation: ${currentConversationId.slice(0, 8)}... (${messageCount} messages)`;
+                clearConversationBtn.style.display = messageCount > 0 ? 'inline-block' : 'none';
+            } else {
+                conversationInfo.textContent = '';
+                clearConversationBtn.style.display = 'none';
+            }
+        }
+
+        function handleAIChunk(chunk) {
+            console.log('handleAIChunk called with:', chunk);
+
+            // Handle AI SDK streaming events directly
+            if (chunk.startsWith('f:')) {
+                // Message start - ignore
+                console.log('Message start event');
+                return;
+            } else if (chunk.startsWith('0:')) {
+                // Text chunk
+                const textData = JSON.parse(chunk.slice(2));
+                console.log('Text chunk:', textData);
+                answerText += textData;
+
+                // Start answer if not started
+                if (!document.getElementById('streamingAnswer')) {
+                    console.log('Starting answer display');
+                    displayAnswerStart();
+                }
+
+                console.log('Updating answer with:', answerText);
+                updateAnswer(answerText);
+
+            } else if (chunk.startsWith('9:')) {
+                // Tool call
+                const toolCallData = JSON.parse(chunk.slice(2));
+                console.log('Tool call:', toolCallData);
+
+                if (toolCallData.toolName === 'search_web') {
+                    // Update UI to show searching
+                    const loadingDiv = document.querySelector('.loading p');
+                    if (loadingDiv) {
+                        loadingDiv.textContent = 'AI is searching the web...';
+                    }
+                }
+
+            } else if (chunk.startsWith('a:')) {
+                // Tool result
+                const toolResultData = JSON.parse(chunk.slice(2));
+                console.log('Tool result:', toolResultData);
+
+                // Parse tool results
+                try {
+                    const resultContent = JSON.parse(toolResultData.result);
+                    
+                    if (resultContent.results) {
+                        // Search results
+                        searchResults = resultContent.results;
+                        searchTime = resultContent.search_time || 0;
+                        displaySearchResults(searchResults, searchTime);
+
+                        // Create citations
+                        citations = [];
+                        for (let i = 0; i < Math.min(searchResults.length, 5); i++) {
+                            const result = searchResults[i];
+                            citations.push({
+                                id: result.id || (i + 1),
+                                title: result.title,
+                                url: result.url,
+                                source: result.source,
+                                snippet: result.snippet
+                            });
+                        }
+                    } else if (resultContent.symbol && resultContent.chart_data) {
+                        // Stock data
+                        displayStockChart(resultContent);
+                    }
+                } catch (e) {
+                    console.warn('Could not parse tool result:', e);
+                }
+
+            } else if (chunk.startsWith('e:')) {
+                // Event (tool execution continuation)
+                const eventData = JSON.parse(chunk.slice(2));
+                console.log('Event:', eventData);
+
+            } else if (chunk.startsWith('d:')) {
+                // Done
+                console.log('Stream done');
+
+            } else {
+                console.log('Unknown chunk:', chunk.slice(0, 50));
+            }
+        }
+
+        async function performSearch(query) {
+            // Cancel any ongoing stream
+            if (currentEventSource) {
+                currentEventSource.close();
+                currentEventSource = null;
+            }
+
+            searchBtn.disabled = true;
+            searchBtn.textContent = 'Searching...';
+            resultsContainer.innerHTML = '<div class="loading"><div class="spinner"></div><p>Searching and analyzing...</p></div>';
+
+            // Reset variables for new query
+            answerText = '';
+            searchResults = [];
+            citations = [];
+            searchTime = 0;
+            console.log('Reset variables for new query');
+
+            // Create conversation if none exists
+            if (!currentConversationId) {
+                await createNewConversation();
+            }
+
+            const requestData = {
+                query: query,
+                model: modelSelect.value,
+                search_provider: providerSelect.value,
+                max_results: parseInt(maxResults.value),
+                stream: streamToggle.checked,
+                conversation_id: currentConversationId
+            };
+
+            try {
+                if (streamToggle.checked) {
+                    await performStreamingSearch(requestData);
+                } else {
+                    await performRegularSearch(requestData);
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                showError(`Search failed: ${error.message}`);
+            } finally {
+                // Ensure button is re-enabled even if there's an error
+                setTimeout(() => {
+                    searchBtn.disabled = false;
+                    searchBtn.textContent = 'Search';
+                }, 100);
+            }
+        }
+
+        async function performRegularSearch(requestData) {
+            const response = await fetch(`${API_BASE}/search`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            displayResults(data);
+        }
+
+        async function performStreamingSearch(requestData) {
+            const response = await fetch(`${API_BASE}/search/stream`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+
+            let searchResults = [];
+            let citations = [];
+            let answerText = '';
+            let searchTime = 0;
+
+            try {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+
+                    for (const line of lines) {
+                        if (!line.trim()) continue; // Skip empty lines
+
+                        if (line.startsWith('data: ')) {
+                            const dataContent = line.slice(6);
+
+                            // Try to parse as JSON first (our custom events)
+                            try {
+                                const data = JSON.parse(dataContent);
+
+                                if (data.type === 'processing_start') {
+                                    resultsContainer.innerHTML = '<div class="loading"><div class="spinner"></div><p>Processing your query...</p></div>';
+                                } else if (data.type === 'conversation_context') {
+                                    const contextInfo = document.createElement('div');
+                                    contextInfo.className = 'search-status';
+                                    contextInfo.innerHTML = `
+                                        <h3>Using Conversation Context (${data.message_count} previous messages)</h3>
+                                    `;
+                                    resultsContainer.appendChild(contextInfo);
+                                } else if (data.type === 'stream_complete') {
+                                    if (citations && citations.length > 0) {
+                                        displayCitations(citations);
+                                    }
+                                    displayMetadata(requestData, searchTime);
+                                    messageCount += 2;
+                                    updateConversationInfo();
+                                    searchBtn.disabled = false;
+                                    searchBtn.textContent = 'Search';
+                                } else if (data.type === 'error') {
+                                    showError(data.message);
+                                }
+                            } catch (e) {
+                                // Not JSON, so it's a raw AI SDK chunk
+                                handleAIChunk(dataContent);
+                            }
+                        } else if (line.match(/^[0-9a-f]:/)) {
+                            // This is a raw AI SDK chunk (f:, 0:, 9:, a:, d:, e:)
+                            console.log('Raw AI SDK chunk detected:', line);
+                            handleAIChunk(line);
+                        }
+                    }
+                }
+            } finally {
+                reader.releaseLock();
+            }
+        }
+
+        function displayResults(data) {
+            resultsContainer.innerHTML = '';
+
+            // Display search results
+            if (data.search_results && data.search_results.length > 0) {
+                displaySearchResults(data.search_results, data.search_time);
+            }
+
+            // Display answer
+            const answerContainer = document.createElement('div');
+            answerContainer.className = 'answer-container';
+            answerContainer.innerHTML = `
+                <h3>Answer</h3>
+                <div class="answer-text">${formatAnswer(data.answer)}</div>
+            `;
+            resultsContainer.appendChild(answerContainer);
+
+            // Display citations
+            if (data.citations && data.citations.length > 0) {
+                displayCitations(data.citations);
+            }
+
+            // Display metadata
+            displayMetadata(data, data.search_time, data.generation_time, data.total_time);
+
+            // Update conversation info
+            if (data.metadata && data.metadata.message_count) {
+                messageCount = data.metadata.message_count;
+                updateConversationInfo();
+            }
+        }
+
+        function displaySearchResults(results, searchTime) {
+            const existingStatus = document.querySelector('.search-status');
+            if (existingStatus) {
+                existingStatus.remove();
+            }
+
+            const statusContainer = document.createElement('div');
+            statusContainer.className = 'search-status';
+            statusContainer.innerHTML = `
+                <h3>Search Results (${results.length} found in ${searchTime.toFixed(2)}s)</h3>
+                <div class="search-results">
+                    ${results.map(result => `
+                        <div class="search-result">
+                            <h4>${result.title}</h4>
+                            <div class="source">${result.source}</div>
+                            <div class="snippet">${result.snippet}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            resultsContainer.appendChild(statusContainer);
+        }
+
+        function displayAnswerStart() {
+            console.log('displayAnswerStart called');
+            const existingAnswer = document.querySelector('.answer-container');
+            if (existingAnswer) {
+                existingAnswer.remove();
+            }
+
+            const answerContainer = document.createElement('div');
+            answerContainer.className = 'answer-container';
+            answerContainer.innerHTML = `
+                <h3>Answer</h3>
+                <div class="answer-text" id="streamingAnswer"></div>
+            `;
+            resultsContainer.appendChild(answerContainer);
+            console.log('Answer container added to DOM');
+        }
+
+        function updateAnswer(text) {
+            console.log('updateAnswer called with:', text);
+            const answerElement = document.getElementById('streamingAnswer');
+            if (answerElement) {
+                answerElement.innerHTML = formatAnswer(text);
+                console.log('Answer element updated');
+            } else {
+                console.error('streamingAnswer element not found!');
+            }
+        }
+
+
+        function displayCitations(citations) {
+            const existingCitations = document.querySelector('.citations');
+            if (existingCitations) {
+                existingCitations.remove();
+            }
+
+            if (citations && citations.length > 0) {
+                const citationsContainer = document.createElement('div');
+                citationsContainer.className = 'citations';
+                citationsContainer.innerHTML = `
+                    <h4>Sources</h4>
+                    ${citations.map(citation => `
+                        <div class="citation">
+                            <div class="citation-id">[${citation.id}]</div>
+                            <div class="citation-title">${citation.title}</div>
+                            <div class="citation-source">
+                                <a href="${citation.url}" target="_blank">${citation.source}</a>
+                            </div>
+                        </div>
+                    `).join('')}
+                `;
+
+                const answerContainer = document.querySelector('.answer-container');
+                if (answerContainer) {
+                    answerContainer.appendChild(citationsContainer);
+                }
+            }
+        }
+
+        function displayMetadata(data, searchTime, generationTime, totalTime) {
+            const existingMetadata = document.querySelector('.metadata');
+            if (existingMetadata) {
+                existingMetadata.remove();
+            }
+
+            const metadataContainer = document.createElement('div');
+            metadataContainer.className = 'metadata';
+
+            let timingInfo = '';
+            if (searchTime !== undefined) {
+                timingInfo = `<div class="timing">
+                    <span>Search: ${searchTime.toFixed(2)}s</span>
+                    ${generationTime ? `<span>Generation: ${generationTime.toFixed(2)}s</span>` : ''}
+                    ${totalTime ? `<span>Total: ${totalTime.toFixed(2)}s</span>` : ''}
+                </div>`;
+            }
+
+            metadataContainer.innerHTML = `
+                <strong>Query:</strong> ${data.query || data.model}<br>
+                <strong>Model:</strong> ${data.model || data.metadata?.model}<br>
+                <strong>Provider:</strong> ${data.search_provider || data.metadata?.search_provider}<br>
+                ${timingInfo}
+            `;
+            resultsContainer.appendChild(metadataContainer);
+        }
+
+        function formatAnswer(text) {
+            // Simple formatting for citations and paragraphs
+            return text
+                .replace(/\[(\d+)\]/g, '<sup style="color: #764ba2; font-weight: bold;">[$1]</sup>')
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/^/, '<p>')
+                .replace(/$/, '</p>');
+        }
+
+        function showError(message) {
+            resultsContainer.innerHTML = `
+                <div class="error">
+                    <strong>Error:</strong> ${message}
+                </div>
+            `;
+        }
+
+        function displayStockChart(stockData) {
+            console.log('Displaying stock chart:', stockData);
+            
+            // Create stock chart container
+            const chartContainer = document.createElement('div');
+            chartContainer.className = 'stock-chart-container';
+            chartContainer.innerHTML = `
+                <div class="stock-info">
+                    <h3>${stockData.company_name} (${stockData.symbol})</h3>
+                    <div class="stock-price">
+                        <span class="current-price">$${stockData.current_price}</span>
+                        <span class="change ${stockData.change >= 0 ? 'positive' : 'negative'}">
+                            ${stockData.change >= 0 ? '+' : ''}${stockData.change} (${stockData.change_percent.toFixed(2)}%)
+                        </span>
+                    </div>
+                    <div class="stock-details">
+                        ${stockData.market_cap !== 'N/A' ? `<span>Market Cap: ${formatMarketCap(stockData.market_cap)}</span>` : ''}
+                        ${stockData.pe_ratio !== 'N/A' ? `<span>P/E: ${stockData.pe_ratio}</span>` : ''}
+                        ${stockData.ma_20 ? `<span>MA20: $${stockData.ma_20}</span>` : ''}
+                        ${stockData.ma_50 ? `<span>MA50: $${stockData.ma_50}</span>` : ''}
+                    </div>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="stockChart-${stockData.symbol}" width="800" height="400"></canvas>
+                </div>
+                <div class="chart-info">
+                    <small>Period: ${stockData.period} | Interval: ${stockData.interval} | Data Points: ${stockData.data_points}</small>
+                </div>
+            `;
+            
+            resultsContainer.appendChild(chartContainer);
+            
+            // Create the chart
+            const ctx = document.getElementById(`stockChart-${stockData.symbol}`).getContext('2d');
+            
+            // Prepare data for Chart.js
+            const labels = stockData.chart_data.map(d => d.date);
+            const prices = stockData.chart_data.map(d => d.close);
+            const volumes = stockData.chart_data.map(d => d.volume);
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: `${stockData.symbol} Price`,
+                        data: prices,
+                        borderColor: stockData.change >= 0 ? '#10b981' : '#ef4444',
+                        backgroundColor: stockData.change >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `${stockData.company_name} Stock Price`,
+                            color: '#ffffff'
+                        },
+                        legend: {
+                            labels: {
+                                color: '#ffffff'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: '#888888',
+                                maxTicksLimit: 10
+                            },
+                            grid: {
+                                color: '#333333'
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                color: '#888888',
+                                callback: function(value) {
+                                    return '$' + value.toFixed(2);
+                                }
+                            },
+                            grid: {
+                                color: '#333333'
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    elements: {
+                        point: {
+                            radius: 0,
+                            hoverRadius: 5
+                        }
+                    }
+                }
+            });
+        }
+
+        function formatMarketCap(marketCap) {
+            if (typeof marketCap === 'number') {
+                if (marketCap >= 1e12) {
+                    return '$' + (marketCap / 1e12).toFixed(2) + 'T';
+                } else if (marketCap >= 1e9) {
+                    return '$' + (marketCap / 1e9).toFixed(2) + 'B';
+                } else if (marketCap >= 1e6) {
+                    return '$' + (marketCap / 1e6).toFixed(2) + 'M';
+                } else {
+                    return '$' + marketCap.toLocaleString();
+                }
+            }
+            return marketCap;
+        }
+
+        // Initialize conversation on page load
+        window.addEventListener('load', async () => {
+            await createNewConversation();
+            searchInput.focus();
+        });
+    </script>
+</body>
+
+</html>

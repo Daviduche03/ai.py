@@ -1,0 +1,50 @@
+[tool.poetry]
+name = "python-ai-sdk"
+version = "0.0.2"
+description = "A Python AI SDK inspired by the Vercel AI SDK with streaming support and multi-provider integration."
+authors = ["David uche <Daviduche176@gmail.com>"]
+readme = "README.md"
+license = "MIT"
+homepage = "https://github.com/Daviduche03/ai.py"
+repository = "https://github.com/Daviduche03/ai.py"
+documentation = "https://github.com/Daviduche03/ai.py#readme"
+keywords = ["ai", "openai", "google", "streaming", "sdk", "llm"]
+packages = [{include = "ai"}]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+httpx = ">=0.25.0"
+openai = ">=1.0.0"
+pydantic = ">=2.0.0"
+google-genai = ">=1.0.0"
+requests = ">=2.25.0"
+anthropic = {version = ">=0.25.0", optional = true}
+fastapi = {version = ">=0.100.0", optional = true}
+uvicorn = {extras = ["standard"], version = ">=0.20.0", optional = true}
+
+[tool.poetry.extras]
+fastapi = ["fastapi", "uvicorn"]
+anthropic = ["anthropic"]
+all = ["fastapi", "uvicorn", "anthropic"]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+mypy = "^1.13.0"
+ruff = "^0.8.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
